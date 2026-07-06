@@ -3,12 +3,10 @@ global:
 
 scrape_configs:
 
-  - job_name: "order-service"
-
+  - job_name: order-service
     static_configs:
       - targets: ["order-service:5000"]
 
-  - job_name: "product-service"
-
+  - job_name: product-service
     static_configs:
       - targets: ["product-service:5001"]

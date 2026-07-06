@@ -1,0 +1,106 @@
+services:
+
+  # --- Application services ------------------------------------------------
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    ports:
+      # Host port 5050 -> container port 5000. On macOS, port 5000 is
+      # commonly held by ControlCenter (AirPlay Receiver), so the host-side
+      # port is remapped here; the service itself still listens on 5000
+      # inside the container.
+      - "5050:5000"
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - product-service
+      - otel-collector
+
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    ports:
+      - "5001:5001"
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - otel-collector
+
+  # --- Metrics ---------------------------------------------------------------
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - order-service
+      - product-service
+
+  # --- Logs --------------------------------------------------------------
+
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: promtail
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml
+      - ./logs:/logs
+    depends_on:
+      - loki
+
+  # --- Dashboards ------------------------------------------------------------
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      # Anonymous access with Admin role, so the dashboards are visible
+      # immediately at http://localhost:3000 without logging in.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+      - loki
+
+  # --- Traces --------------------------------------------------------------
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./otel/collector-config.yaml:/etc/otel/config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    depends_on:
+      - jaeger
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686" # Jaeger UI

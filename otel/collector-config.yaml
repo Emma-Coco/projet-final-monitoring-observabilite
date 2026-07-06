@@ -1,0 +1,30 @@
+receivers:
+  otlp:
+    protocols:
+      # Explicit 0.0.0.0 endpoints: the OTLP receiver otherwise defaults to
+      # binding on 127.0.0.1, which is unreachable from order-service and
+      # product-service (separate containers on the same Docker network).
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+
+exporters:
+  debug:
+
+  otlp:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+service:
+
+  pipelines:
+
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp]

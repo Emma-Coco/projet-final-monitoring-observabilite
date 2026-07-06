@@ -1,0 +1,14 @@
+apiVersion: 1
+
+# Tells Grafana to load every dashboard JSON file found in
+# /var/lib/grafana/dashboards (mounted from ./grafana/dashboards) so the
+# "Application Overview" and "Logs" dashboards are ready on first launch.
+providers:
+  - name: "Default"
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

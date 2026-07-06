@@ -1,0 +1,19 @@
+apiVersion: 1
+
+# Auto-provisioned datasources: Grafana reads this file at startup, so
+# Prometheus and Loki are already configured, no manual UI steps required.
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
