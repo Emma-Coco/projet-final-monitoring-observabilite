@@ -1,3 +1,7 @@
+# Repo GitHub : 
+
+https://github.com/Emma-Coco/projet-final-monitoring-observabilite 
+
 # Monitoring & Observabilité — Mini E-commerce
 
 Projet de démonstration Cloud-Native pour le module **Monitoring &
